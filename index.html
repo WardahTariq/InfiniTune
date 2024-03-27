@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfiniTune</title>
+    <!-- Include Highcharts library -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <style>
+        #boxContainer{
+            /* border:1px solid black; */
+            display:flex;
+            justify-content: space-between;
+        }
+        .box{
+            border: 1px solid rgb(180, 173, 173);
+            border-radius: 7px;
+            width:200px;
+            height:100px;
+            padding:10px;
+            overflow:hidden;
+            text-align: center;
+        }
+        .names{
+            font-size:14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Container for the chart -->
+    <div id="chartContainer" style="width: 100%; height: 400px;"></div>
+
+    <!-- Containers for displaying values from the file -->
+    <div id="boxContainer">
+        <div id="box1" class="box" ><p class="names">max_parallel_worker_per_gather</p><p id="value1">2</p></div>
+        <div id="box2" class="box"><p class="names">shared_buffer</p><p id="value2">128MB</p></div>
+        <div id="box3" class="box"><p class="names">effective_cache_size</p><p id="value3">4GB</p></div>
+        <div id="box4" class="box"><p class="names">work_mem</p><p id="value4">4MB</p></div>
+    </div>
+
+    <script>
+        // Function to fetch data from log file and update chart
+        function updateChart() {
+            fetch('./tmpLog/logFile') // Change path to your log file
+                .then(response => response.text())
+                .then(data => {
+                    const lines = data.trim().split('\n');
+                    const latencyData = lines.map(line => {
+                        const [timestamp, latency] = line.split(': ');
+                        const newTimestamp = new Date(timestamp);
+                        newTimestamp.setHours(newTimestamp.getHours() + 5); // Adding 5 hours
+                        return [newTimestamp.getTime(), parseFloat(latency)];
+                    });
+                    
+                    // Update chart with new data
+                    chart.update({
+                        series: [{
+                            data: latencyData,
+                            name: 'Latency'
+                        }]
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
+
+            // Fetch data from file and display in boxes
+            fetch('./tmpLog/w.log') // Change path to your data file
+                .then(response => response.text())
+                .then(data => {
+                    // Split the data into lines
+                    const lines = data.trim().split('\n');
+                    // Get the last line
+                    const lastLine = lines[lines.length - 1];
+                    // Match the array in the last line
+                    const match = lastLine.match(/\[([^[\]]*)\]/g);
+                    // If a match is found
+                    if (match && match.length > 0) {
+                        // Extract the values from the matched array
+                        const values = match[match.length - 1].slice(1, -1).split(', ');
+                        // Update the content of each box with the respective value
+                        const names = ["max_parallel_worker_per_gather", "shared_buffer", "effective_cache_size", "work_mem"]
+                        for (let i = 0; i < values.length; i++) {
+                            const box = document.getElementById(`value${i + 1}`);
+                            if (box) {
+                                box.textContent = values[i];
+                            }
+                        }
+                    } else {
+                        console.error('No arrays found in the last line of the file.');
+                    }
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Initial chart configuration
+        const chart = Highcharts.chart('chartContainer', {
+            chart: {
+                type: 'line'
+            },
+            title: {
+                text: 'InfiniTune'
+            },
+            xAxis: {
+                type: 'datetime',
+                title: {
+                    text: 'Time'
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Latency'
+                }
+            },
+            series: [{
+                name: 'Latency',
+                data: [] // Initial empty data
+            }]
+        });
+
+        // Update chart periodically (e.g., every 2 seconds)
+        setInterval(updateChart, 2000); // Change interval as needed
+    </script>
+</body>
+</html>
+
+
+

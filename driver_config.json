@@ -1,0 +1,9 @@
+{
+  "database_type" : "postgres",
+  "database_name" : "random",
+  "database_disk": "/opt/homebrew/var/postgresql@16",
+  "database_conf": "/opt/homebrew/var/postgresql@16/postgresql.conf",
+  "username" : "warda",
+  "password" : "random",
+  "oltpbench_log" : "/Users/warda/Desktop/fyp-dbai/Wardah_Tariq/ddpg/oltp.log"
+}
