@@ -1,16 +1,12 @@
 
 import numpy as np
 import copy
-from fabric import task, Connection
-import json
 from multiprocessing import Process
 import time
-from Parser import Parser  # Assuming Parser is a custom module in your project
+from Parser import Parser  
 import subprocess
+import config
 
-# Load configuration
-with open('driver_config.json', 'r') as f:
-    CONF = json.load(f)
 
 def run_command(command):
     # Hardcoded filename
@@ -18,15 +14,12 @@ def run_command(command):
 
     # Check if the command requires sudo
     if command.startswith('sudo'):
-        # Prompt for the sudo password
-        sudo_password = '15032002'
-
-        # Create a command list to pass to subprocess.run
+        
+        
         command_list = command.split()
-        # print(f"command_list = {command_list}")
 
         # Execute the command and capture the output
-        result = subprocess.run(command_list, input=sudo_password+'\n', shell=False,
+        result = subprocess.run(command_list,  shell=False,
                                 capture_output=True, text=True)
     else:
         # Execute the command and capture the output
@@ -61,14 +54,11 @@ def run_benchmark(workload=None):
         run_command('pgbench -c 10 -j 10 -t 10000 random')
         return
     command=f'pgbench -c {workload[1]} -j {workload[2]} -t {workload[3]} {workload[0]}'
-    # run_command(f'pgbench -i -s {workload[4]}')
-    # time.sleep(10)
     run_command(command)
-    # time.sleep(10)
+
 
 
 def get_latency():
-    
     with open('./tmpLog/output.txt', 'r') as f:
         lines = f.readlines()
         for line in lines:
@@ -78,28 +68,9 @@ def get_latency():
                 return latency_value
     return None
 
-# @task
+
 def restart_database():
     run_command('brew services restart postgresql@16')
-    # c.sudo('service postgresql restart')
-
-# @task
-def save_dbms_result(c):
-    t = int(time.time())
-    files = ['knobs.json', 'metrics_after.json', 'metrics_before.json', 'summary.json']
-    for f_ in files:
-        f_prefix = f_.split('.')[0]
-        c.run('cp ../controller/output/{} {}/{}__{}.json'.format(f_, CONF['save_path'], t, f_prefix))
-
-    c.run('cp tpch.log {}/{}__{}.txt'.format(CONF['save_path'], t, 'queryplan'))
-
-@task
-def upload_result(c):
-    c.run('python3 ../../server/website/script/upload/upload.py ../controller/output/ {} {}/new_result/'.format(CONF['upload_code'], CONF['upload_url']))
-
-@task
-def add_udf(c):
-    c.sudo('python3 ../driver/LatencyUDF.py ../controller/output/ {}'.format('tpch.log'))
 
 class InfiniTuneEnv():
     def __init__(self, min_vals, max_vals, default_vals, knob_names):
@@ -140,33 +111,22 @@ class InfiniTuneEnv():
         return (nextstate, reward, is_terminal, debug_info)
 
     def run_experiment(self,workload=None):
-        # connect_kwargs={'key_filename': '/Users/warda/.ssh/ddpg'}
-        # with Connection('localhost',user='warda', port=22, connect_kwargs=connect_kwargs) as c:
-        # free cache
         free_cache()
 
         # restart database
         restart_database()
-
-        # Start controller in a separate process
-        # p = Process(target=run_controller, args=(c,))
-        # p.start()
 
         time.sleep(15)
 
         # Run TPCH
         run_benchmark(workload)
 
-        # Stop controller
-        # stop_controller(c)
-        # p.join()
-
         reward = float(get_latency())
         print(reward)
         return reward
 
     def change_conf(self, config_vals):
-        conf_path = '/opt/homebrew/var/postgresql@16/postgresql.conf' 
+        conf_path = config.conf_path 
         with open(conf_path, "r+") as postgresqlconf:
             lines = postgresqlconf.readlines()
             settings_idx = lines.index("# Add settings for extensions here\n")
@@ -182,14 +142,3 @@ class InfiniTuneEnv():
                 print (s)
                 postgresqlconf.write(s)
                 
-        # conf_path = '/opt/homebrew/var/postgresql@16/postgresql.conf'
-        # with Connection('localhost') as c:
-        #     for i, knob_name in enumerate(self.knob_names):
-        #         s = '{} = {}\n'.format(knob_name, config_vals[i])
-        #         c.sudo("sed -i '/{}/c\\{}' {}".format(knob_name, s, conf_path))
-
-    def save_and_upload(self):
-        pass
-        # add_udf()
-        # save_dbms_result()
-        # upload_result()

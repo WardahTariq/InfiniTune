@@ -1,27 +1,14 @@
-import fabric
 import numpy as np
 import random
-import argparse
-from keras.models import model_from_json, Model
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.optimizers import Adam
 import tensorflow as tf
-import json
 import copy
 from datetime import datetime
 import matplotlib.pyplot as plt
-
-
-
 from ReplayBuffer import ReplayBuffer
 from ActorNetwork import ActorNetwork
 from CriticNetwork import CriticNetwork
 from InfiniTuneEnv import InfiniTuneEnv
 from Parser import Parser
-from keras.optimizers import Adam
-import timeit
-
 
 
 
@@ -194,9 +181,6 @@ def ddpgTune():
             action, is_random = epsilon_greedy_policy(policy_action, epsilon)
             print(f"action {action} is_random {is_random}")
 
-            # gaussian noise for exploration
-            # action, is_random = gaussian_noise_policy(policy_action, sigma)
-
             # constraint [0, 1]
             action = min(action, 1.0)
             action = max(action, 0.0)
@@ -234,11 +218,7 @@ def ddpgTune():
                     grads = critic.gradients(X_currstates, a_for_grad)
                     mean_grads = 1.0 / len(X_currstates) * grads
                     actor.train(X_currstates, mean_grads)
-                    # if grads is not None:
-                    #     mean_grads = 1.0 / len(X_currstates) * grads
-                    #     actor.train(X_currstates, mean_grads)
-                    # else:
-                    #     print("Gradients computation failed, skipping actor training for this batch.")
+                    
 
                 actor.target_train()
                 critic.target_train()
@@ -266,15 +246,12 @@ def ddpgTune():
             if is_terminal:
                 break
 
-
-        # print (current_state)
         # convert current knob to config knob
         rescaled_vals = Parser().rescaled(min_raw_vals, max_raw_vals, current_state[:tuning_knobs_num])
         config_vals = get_config_knobs(rescaled_vals)
 
-        # print (config_vals)
+      
         write_log(f, current_state, config_vals, episode_i)
-        #f.write(current_state)
         env.change_conf(config_vals)
 
         # run tpch query to get reward
@@ -289,7 +266,6 @@ def ddpgTune():
 
         if episode_i == 0:
             default_reward = config_reward
-            # buff.burn_in()
 
         # scaled reward, latency: 1 - new/default
         # As config_reward decreases scaled_reward increases.
@@ -306,8 +282,6 @@ def ddpgTune():
             latest_average_reward=[]
             # print(f'Average reward for episodes {episode_i-10}-{episode_i}: {average_reward}')
 
-        # save, udf and upload
-        env.save_and_upload()
     f.close()
     print("Training finished.")
     x = np.arange(interval, episode_count, interval)

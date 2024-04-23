@@ -3,11 +3,11 @@ transaction type: <builtin: TPC-B (sort of)>
 scaling factor: 50
 query mode: simple
 number of clients: 10
-number of threads: 6
+number of threads: 5
 maximum number of tries: 1
-number of transactions per client: 25000
-number of transactions actually processed: 250000/250000
+number of transactions per client: 1000
+number of transactions actually processed: 10000/10000
 number of failed transactions: 0 (0.000%)
-latency average = 0.699 ms
-initial connection time = 14.942 ms
-tps = 14310.649980 (without initial connection time)
+latency average = 1.017 ms
+initial connection time = 11.184 ms
+tps = 9834.727406 (without initial connection time)

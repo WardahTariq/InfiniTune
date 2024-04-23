@@ -182,7 +182,7 @@ def ddpgTune(workload):
     seed = 1234
     set_seed(seed)
 
-    episode_count = 6 #300 #400 #000
+    episode_count = 2 #300 #400 #000
     step = 0
 
     # Exploration
@@ -363,18 +363,18 @@ def ddpgTune(workload):
             average_reward = np.mean(latest_average_reward)
             average_rewards.append(average_reward)
             latest_average_reward=[]
-            # print(f'Average reward for episodes {episode_i-10}-{episode_i}: {average_reward}')
+            print(f'Average reward for episodes {episode_i-10}-{episode_i}: {average_reward}')
 
         # save, udf and upload
-        env.save_and_upload()
+        # d
     f.close()
     print("Training finished.")
-    x = np.arange(interval, episode_count, interval)
-    plt.plot(x, average_rewards)
-    plt.xlabel('Episode')
-    plt.ylabel('Average Reward (Latency)')
-    plt.title('Evaluation Results- Running Average of rewards')
-    plt.show()
+    # x = np.arange(interval, episode_count, interval)
+    # plt.plot(x, average_rewards)
+    # plt.xlabel('Episode')
+    # plt.ylabel('Average Reward (Latency)')
+    # plt.title('Evaluation Results- Running Average of rewards')
+    # plt.show()
    
 
 
